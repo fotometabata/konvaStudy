@@ -17,18 +17,36 @@
             </md-field>
 
             <md-field style="float: left; margin-top: -8px">
-              <!-- リセットボタン -->
               <md-button
-                  class="md-dense md-raised md-primary"
-                  @click="onClearCanvas"
+                class="md-dense md-raised md-primary"
+                @click="onUndo"
+              >
+                戻る
+              </md-button>
+            </md-field>
+
+            <md-field style="float: left; margin-top: -8px">
+              <md-button
+                class="md-dense md-raised md-primary"
+                @click="onRedo"
+              >
+                進む
+              </md-button>
+            </md-field>
+
+            <md-field style="float: left; margin-top: -8px">
+              <md-button
+                class="md-dense md-raised md-primary"
+                @click="onClearCanvas"
               >
                   リセット
               </md-button>
+            </md-field>
 
-              <!-- 保存ボタン -->
+            <md-field style="float: left; margin-top: -8px">
               <md-button
-                  class="md-dense md-raised md-primary"
-                  @click="onSaveImageFile"
+                class="md-dense md-raised md-primary"
+                @click="onSaveImageFile"
               >
                   保存
               </md-button>
@@ -86,6 +104,12 @@ export default {
     onReset: function() {
       this.mode = this.defaultMode;
       this.brushColor = this.defaultBrushColor;
+    },
+    onUndo: function() {
+      this.$refs.FreeDrawing.undo();
+    },
+    onRedo: function() {
+      this.$refs.FreeDrawing.redo();
     }
   },
   computed: {
@@ -98,6 +122,6 @@ export default {
 
 <style lang="scss" scoped>
   .md-field {
-    max-width: 200px;
+    max-width: 110px;
   }
 </style>

@@ -44,8 +44,8 @@ export default {
       y: 0
     },
     pos: null,
-    undoDataStack: [],
-    redoDataStack: [],
+    undoDataStack: [], // 戻る配列
+    redoDataStack: [], // 進む配列
     imageObj: null,
     backgroundImageLayer: null,
     backgroundImageScope: null
@@ -86,14 +86,15 @@ export default {
     this.stage.addEventListener('touchend', this.mouseup);
     this.stage.addEventListener('mousemove', this.mousemove);
     this.stage.addEventListener('touchmove', this.mousemove);
-
-    this.beforeDraw();
   },
   methods: {
     /**  描画開始
      *   マウスダウン時の座標を取得しておく
      */
     mousedown: function() {
+      // 戻る配列に描画前のキャンバスイメージを保存しておく
+      this.undoDataStack.push(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
+
       this.isPaint = true;
       this.lastPointerPosition = this.stage.getPointerPosition();
     },
@@ -103,16 +104,7 @@ export default {
 
       // 直線モードの時はマウスを話したときに描画されるようにする
       if (this.isTargetMode('line')) {
-        this.pos = this.stage.getPointerPosition();
-        this.localPos.x = this.pos.x - this.drawingScope.x();
-        this.localPos.y = this.pos.y - this.drawingScope.y();
-        this.context.lineTo(this.localPos.x, this.localPos.y);
-
-        this.context.closePath();
-        this.context.stroke();
-
-        this.lastPointerPosition = this.pos;
-        this.drawingLayer.draw();
+        this.drawToCanvas();
       }
     },
     mousemove: function() {
@@ -131,31 +123,14 @@ export default {
 
       this.localPos.x = this.lastPointerPosition.x - this.drawingScope.x();
       this.localPos.y = this.lastPointerPosition.y - this.drawingScope.y();
-      // console.log('this.lastPointerPosition.x：' + this.lastPointerPosition.x)
-      // console.log('this.lastPointerPosition.y：' + this.lastPointerPosition.y)
-      // console.log('this.drawingScope.x：' + this.drawingScope.x()) // あたいは変わらない
-      // console.log('this.drawingScope.y：' + this.drawingScope.y()) // 値は変わらない
 
       // 開始座標を指定する
       this.context.moveTo(this.localPos.x, this.localPos.y);
 
       // ペンモード
       if (this.isTargetMode('brush')) {
-        this.pos = this.stage.getPointerPosition();
-        this.localPos.x = this.pos.x - this.drawingScope.x();
-        this.localPos.y = this.pos.y - this.drawingScope.y();
-        this.context.lineTo(this.localPos.x, this.localPos.y);
-
-        this.context.closePath();
-        this.context.stroke();
-
-        this.lastPointerPosition = this.pos;
-        this.drawingLayer.draw();
+        this.drawToCanvas();
       }
-    },
-    beforeDraw: function() {
-      // 元に戻す配列の先頭にcontextのImageDataを保持する
-      this.undoDataStack.push(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
     },
     /** リセットボタン押下時、キャンバスをクリアするメソッド */
     onClearCanvas: function() {
@@ -187,9 +162,49 @@ export default {
       // moveToBottomで画像を最背面に移動（これをしないと、ペンの描画が画像の下に潜ってしまう）
       this.backgroundImageLayer.moveToBottom();
     },
+    drawToCanvas: function() {
+      this.pos = this.stage.getPointerPosition();
+      this.localPos.x = this.pos.x - this.drawingScope.x();
+      this.localPos.y = this.pos.y - this.drawingScope.y();
+      this.context.lineTo(this.localPos.x, this.localPos.y);
+
+      this.context.closePath();
+      this.context.stroke();
+
+      this.lastPointerPosition = this.pos;
+      this.drawingLayer.draw();
+    },
     // 現在のモードが指定されたモードと一致するかどうか
     isTargetMode: function(targetMode) {
       return this.mode === targetMode;
+    },
+    // 戻る
+    undo: function() {
+      // 元に戻す配列に何もない場合は何もしない
+      if (this.undoDataStack.length <= 0) {
+        return;
+      }
+
+      // 進む配列に、戻る前のキャンバスイメージを保存しておく
+      this.redoDataStack.push(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
+
+      // キャンバスを1つ前の状態に戻す
+      this.context.putImageData(this.undoDataStack.pop(), 0, 0);
+      this.drawingLayer.draw();
+    },
+    // 進む
+    redo: function() {
+      // 進む配列に何もない場合は何もしない
+      if (this.redoDataStack.length <= 0) {
+        return;
+      }
+
+      // 戻る配列に、進む前のキャンバスイメージを保存しておく
+      this.undoDataStack.push(this.context.getImageData(0, 0, this.canvas.width, this.canvas.height));
+
+      // キャンバスの状態を進める
+      this.context.putImageData(this.redoDataStack.pop(), 0, 0);
+      this.drawingLayer.draw();
     }
   },
   watch: {

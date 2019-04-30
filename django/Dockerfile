@@ -14,9 +14,6 @@ RUN apt-get install -y nodejs
 RUN npm install -g @vue/cli
 RUN npm install -g @vue/cli-init
 
-# axiosをインストール（ajax通信用ライブラリ）
-# npm install axios moment --save
-
 # 下記vue-materialを使用するにあたって必要なツール
 # npm install --save vuex vuex vue-material@1.0.0 vue-material@beta babel-plugin-transform-object-rest-spread vue-style-loader ts-loader@3.5.0
-# npm install --save css-loader sass-loader node-sass awesome-typescript-loader es6-promise vue-konva tiny-cookier
+# npm install --save css-loader sass-loader node-sass awesome-typescript-loader es6-promise vue-konva tiny-cookier axios moment
