@@ -7,6 +7,7 @@
               <md-select v-model="mode" name="mode" id="mode">
                 <md-option value="brush">ペン</md-option>
                 <md-option value="eraser">消しゴム</md-option>
+                <md-option value="line">直線</md-option>
               </md-select>
             </md-field>
 
@@ -42,7 +43,7 @@
             :mode="mode"
             :backgroundImage="baseImage"
             :brushColor="brushColor"
-            @reset-brush-color="resetBrushColor"
+            @on-reset="onReset"
             ref="FreeDrawing"
         />
     </div>
@@ -61,7 +62,9 @@ export default {
   },
   data: () => ({
     mode: 'brush',
-    brushColor: '#FFFFFF'
+    brushColor: '#FFFFFF',
+    defaultMode: 'brush',
+    defaultBrushColor: '#FFFFFF'
   }),
   methods: {
     ...mapActions(['SAVE_IMAGE_FILE']),
@@ -80,8 +83,9 @@ export default {
         });
       }
     },
-    resetBrushColor: function() {
-      this.brushColor = '#FFFFFF'
+    onReset: function() {
+      this.mode = this.defaultMode;
+      this.brushColor = this.defaultBrushColor;
     }
   },
   computed: {

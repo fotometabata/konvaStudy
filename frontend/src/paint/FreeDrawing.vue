@@ -90,7 +90,9 @@ export default {
     this.beforeDraw();
   },
   methods: {
-    /**  描画開始 */
+    /**  描画開始
+     *   マウスダウン時の座標を取得しておく
+     */
     mousedown: function() {
       this.isPaint = true;
       this.lastPointerPosition = this.stage.getPointerPosition();
@@ -98,35 +100,58 @@ export default {
     /** 描画終了 */
     mouseup: function() {
       this.isPaint = false;
+
+      // 直線モードの時はマウスを話したときに描画されるようにする
+      if (this.isTargetMode('line')) {
+        this.pos = this.stage.getPointerPosition();
+        this.localPos.x = this.pos.x - this.drawingScope.x();
+        this.localPos.y = this.pos.y - this.drawingScope.y();
+        this.context.lineTo(this.localPos.x, this.localPos.y);
+
+        this.context.closePath();
+        this.context.stroke();
+
+        this.lastPointerPosition = this.pos;
+        this.drawingLayer.draw();
+      }
     },
     mousemove: function() {
       if (!this.isPaint) {
         return;
       }
       // ペンモード時
-      if (this.mode === 'brush') {
+      if (this.isTargetMode('brush') || this.isTargetMode('line')) {
         this.context.globalCompositeOperation = 'source-over';
       }
       // 消しゴムモード時
-      if (this.mode === 'eraser') {
+      if (this.isTargetMode('eraser')) {
         this.context.globalCompositeOperation = 'destination-out';
       }
       this.context.beginPath();
 
       this.localPos.x = this.lastPointerPosition.x - this.drawingScope.x();
       this.localPos.y = this.lastPointerPosition.y - this.drawingScope.y();
+      // console.log('this.lastPointerPosition.x：' + this.lastPointerPosition.x)
+      // console.log('this.lastPointerPosition.y：' + this.lastPointerPosition.y)
+      // console.log('this.drawingScope.x：' + this.drawingScope.x()) // あたいは変わらない
+      // console.log('this.drawingScope.y：' + this.drawingScope.y()) // 値は変わらない
 
+      // 開始座標を指定する
       this.context.moveTo(this.localPos.x, this.localPos.y);
-      this.pos = this.stage.getPointerPosition();
-      this.localPos.x = this.pos.x - this.drawingScope.x();
-      this.localPos.y = this.pos.y - this.drawingScope.y();
 
-      this.context.lineTo(this.localPos.x, this.localPos.y);
-      this.context.closePath();
-      this.context.stroke();
+      // ペンモード
+      if (this.isTargetMode('brush')) {
+        this.pos = this.stage.getPointerPosition();
+        this.localPos.x = this.pos.x - this.drawingScope.x();
+        this.localPos.y = this.pos.y - this.drawingScope.y();
+        this.context.lineTo(this.localPos.x, this.localPos.y);
 
-      this.lastPointerPosition = this.pos;
-      this.drawingLayer.draw();
+        this.context.closePath();
+        this.context.stroke();
+
+        this.lastPointerPosition = this.pos;
+        this.drawingLayer.draw();
+      }
     },
     beforeDraw: function() {
       // 元に戻す配列の先頭にcontextのImageDataを保持する
@@ -139,7 +164,7 @@ export default {
       this.context.fillRect(0, 0, this.width, this.height);
       this.drawingLayer.draw();
 
-      this.$emit('reset-brush-color');
+      this.$emit('on-reset');
     },
     getImageData: function() {
       return this.canvas.toDataURL('image/png');
@@ -161,6 +186,10 @@ export default {
 
       // moveToBottomで画像を最背面に移動（これをしないと、ペンの描画が画像の下に潜ってしまう）
       this.backgroundImageLayer.moveToBottom();
+    },
+    // 現在のモードが指定されたモードと一致するかどうか
+    isTargetMode: function(targetMode) {
+      return this.mode === targetMode;
     }
   },
   watch: {
